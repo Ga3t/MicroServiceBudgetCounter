@@ -182,8 +182,6 @@ public class LedgerServiceImpl implements LedgerService{
 
     @Override
     public String deleteTransaction(Long ledgerId) {
-
-        //ToDo Удаление транзакции сохранять в Redis?
        return null;
 
     }

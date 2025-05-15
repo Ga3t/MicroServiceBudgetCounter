@@ -38,10 +38,9 @@ public class LedgerController {
                                                                  @RequestParam(value="pageSize", defaultValue = "10", required = false) int pageSize,
                                                                  @RequestHeader ("X-User-ID") String userId,
                                                                  TransactionFilter transactionFilter){
-
         if(transactionFilter != null && isFilterNotEmpty(transactionFilter)){
             LedgerResponse response = ledgerService.findAllTransactionsWithCustomFilter(userId, transactionFilter, pageNo, pageSize);
-            return new ResponseEntity<>(response, HttpStatus.CREATED);
+            return new ResponseEntity<>(response, HttpStatus.OK);
         }
         else{
             LedgerResponse response = ledgerService.findAllTransactions(userId, pageNo, pageSize);
