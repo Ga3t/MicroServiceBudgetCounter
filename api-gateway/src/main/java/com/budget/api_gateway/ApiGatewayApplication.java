@@ -24,6 +24,9 @@ public class ApiGatewayApplication {
 				.route("ledger_route", r -> r.path("/ledger/**")
 						.uri("lb://LEDGER-SERVICE")
 				)
+				.route("refreshtoken_route", r -> r.path("/refreshtoken/**")
+						.uri("lb://AUTH-SERVICE"))
 				.build();
+
 	}
 }
