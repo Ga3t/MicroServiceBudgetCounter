@@ -34,15 +34,14 @@ public class AuthServiceImpl implements AuthServices {
 
     private final Logger LOGGER = LoggerFactory.getLogger(this.getClass());
 
-
     @Autowired
-    public AuthServiceImpl(AuthenticationManager authenticationManager, UserRepository repository, PasswordEncoder encoder, JwtGenerator jwtGenerator) {
-        this.authenticationManager = authenticationManager;
-        this.repository = repository;
-        this.encoder = encoder;
+    public AuthServiceImpl(RefreshTokenService refreshTokenService, JwtGenerator jwtGenerator, PasswordEncoder encoder, UserRepository repository, AuthenticationManager authenticationManager) {
+        this.refreshTokenService = refreshTokenService;
         this.jwtGenerator = jwtGenerator;
+        this.encoder = encoder;
+        this.repository = repository;
+        this.authenticationManager = authenticationManager;
     }
-
 
     @Override
     public AuthResponseDto authenticateUser(LoginDto loginDto) {
