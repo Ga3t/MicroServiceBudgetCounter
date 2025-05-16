@@ -8,6 +8,6 @@ import org.springframework.stereotype.Service;
 public interface RefreshTokenService {
 
     String generateRefreshToken(Long userId);
-    AuthResponseDto refreshAccessToken(String refreshToken, Long userId);
+    AuthResponseDto refreshAccessToken(String refreshToken, String jwtToken);
     void revokeRefreshToken(String refreshToken, Long userId);
 }

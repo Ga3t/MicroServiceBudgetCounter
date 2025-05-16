@@ -22,7 +22,8 @@ public class AuthTokenFilterFactory implements GlobalFilter {
 
     private static final List<String> openApiEndpoints = List.of(
             "/auth/login",
-            "/auth/register"
+            "/auth/register",
+            "/refreshtoken/generateaccess"
     );
 
     @Override

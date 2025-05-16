@@ -4,6 +4,7 @@ package com.budget.AuhtService.services.impl;
 import com.budget.AuhtService.dto.AuthResponseDto;
 import com.budget.AuhtService.exceptions.RefreshTokenExpiredException;
 import com.budget.AuhtService.exceptions.RefreshTokenLeakedException;
+import com.budget.AuhtService.exceptions.RefreshTokenRevokeException;
 import com.budget.AuhtService.models.RefreshToken;
 import com.budget.AuhtService.models.UserEntity;
 import com.budget.AuhtService.repository.RefreshTokenRepository;
@@ -22,6 +23,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.Duration;
@@ -51,6 +53,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     }
 
     @Override
+    @Transactional
     public String generateRefreshToken(Long userId) {
 
         UserEntity user = userRepository.findById(userId)
@@ -72,12 +75,18 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     }
 
     @Override
-    public AuthResponseDto refreshAccessToken(String refreshToken, Long userId) {
+    @Transactional
+    public AuthResponseDto refreshAccessToken(String refreshToken, String jwtToken) {
+
+        Long userId = jwtGenerator.getUserIdFromJwt(jwtToken);
 
         RefreshToken token = refreshTokenRepository.findByToken(refreshToken)
                 .orElseThrow(()->new TokenNotFoundException("No such  refresh token"));
 
         Instant expiryDate = token.getExpiryDate();
+
+        if(token.isRevoked())
+            throw new RefreshTokenRevokeException();
 
         if(expiryDate.isBefore(Instant.now()))
             throw new RefreshTokenExpiredException("Token was expired need to login again");
@@ -95,14 +104,15 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         );
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        String jwtToken = jwtGenerator.generateAccessToken(authentication, userId, user.getRole());
+        String newJwtToken = jwtGenerator.generateAccessToken(authentication, userId, user.getRole());
         String newRefreshToken= generateRefreshToken(userId);
         revokeRefreshToken(token.getToken(), userId);
 
-        return new AuthResponseDto(jwtToken, newRefreshToken);
+        return new AuthResponseDto(newJwtToken, newRefreshToken);
     }
 
     @Override
+    @Transactional
     public void revokeRefreshToken(String refreshToken, Long userId) {
 
         RefreshToken revokeToken = refreshTokenRepository.findByToken(refreshToken)
