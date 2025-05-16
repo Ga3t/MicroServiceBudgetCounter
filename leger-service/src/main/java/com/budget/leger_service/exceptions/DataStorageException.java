@@ -5,7 +5,6 @@ public class DataStorageException extends RuntimeException{
         super(message, cause);
     }
 
-    // Можно добавить и конструктор только с сообщением, если нужно
     public DataStorageException(String message) {
         super(message);
     }

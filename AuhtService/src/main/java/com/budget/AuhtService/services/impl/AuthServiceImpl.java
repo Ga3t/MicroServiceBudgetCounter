@@ -3,9 +3,11 @@ package com.budget.AuhtService.services.impl;
 import com.budget.AuhtService.dto.AuthResponseDto;
 import com.budget.AuhtService.dto.LoginDto;
 import com.budget.AuhtService.dto.RegisterDto;
+import com.budget.AuhtService.models.RefreshToken;
 import com.budget.AuhtService.models.UserEntity;
 import com.budget.AuhtService.repository.UserRepository;
 import com.budget.AuhtService.services.AuthServices;
+import com.budget.AuhtService.services.RefreshTokenService;
 import com.budget.core.enums.Role;
 import com.budget.core.security.JwtGenerator;
 import org.slf4j.Logger;
@@ -28,6 +30,8 @@ public class AuthServiceImpl implements AuthServices {
     private UserRepository repository;
     private PasswordEncoder encoder;
     private JwtGenerator jwtGenerator;
+    private RefreshTokenService refreshTokenService;
+
     private final Logger LOGGER = LoggerFactory.getLogger(this.getClass());
 
 
@@ -51,7 +55,8 @@ public class AuthServiceImpl implements AuthServices {
                 .orElseThrow(() -> new RuntimeException("User not found"));
         Role role = user.getRole();
         String token = jwtGenerator.generateAccessToken(authentication, user.getId(), role);
-        return new AuthResponseDto(token);
+        String refreshToken = refreshTokenService.generateRefreshToken(user.getId());
+        return new AuthResponseDto(token, refreshToken);
     }
 
     @Override
