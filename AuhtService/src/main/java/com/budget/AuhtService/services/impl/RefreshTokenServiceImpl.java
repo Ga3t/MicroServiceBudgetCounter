@@ -119,8 +119,11 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
                 .orElseThrow(()->new TokenNotFoundException("No such refresh token"));
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(()-> new UserNotFoundException("User not found"));
-        if(!user.getId().equals(revokeToken.getUser().getId()))
-            throw new ForbiddenException("Leaked token");
+        if(!user.getId().equals(revokeToken.getUser().getId())){
+            revokeToken.setSpecialNotes("This token was leaked."+ Instant.now().toString());
+            refreshTokenRepository.save(revokeToken);
+            throw new RefreshTokenLeakedException(revokeToken.getId());
+        }
 
         revokeToken.setRevoked(true);
         refreshTokenRepository.save(revokeToken);

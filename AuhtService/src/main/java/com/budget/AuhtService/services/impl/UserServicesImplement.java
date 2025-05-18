@@ -3,6 +3,7 @@ package com.budget.AuhtService.services.impl;
 import com.budget.AuhtService.models.UserEntity;
 import com.budget.AuhtService.repository.UserRepository;
 import com.budget.AuhtService.services.UserServices;
+import com.budget.core.exceptions.UserNotFoundException;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Primary;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -36,7 +37,7 @@ public class UserServicesImplement implements UserServices {
 	public UserEntity findByUsername(String username) {
 
 		return repository.findByUsername(username)
-				.orElseThrow(() -> new RuntimeException("User not found"));
+				.orElseThrow(() -> new UserNotFoundException("User not found"));
 	}
 
 	@Override

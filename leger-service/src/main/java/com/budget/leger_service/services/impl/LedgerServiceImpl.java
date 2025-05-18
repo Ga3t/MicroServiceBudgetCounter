@@ -5,7 +5,6 @@ import com.budget.leger_service.exceptions.DataStorageException;
 import com.budget.leger_service.models.Category;
 import com.budget.leger_service.models.LedgerEntity;
 import com.budget.leger_service.repository.CategoryRepository;
-import com.budget.leger_service.repository.FilterLedgerRepostory;
 import com.budget.leger_service.repository.LedgerRepository;
 import com.budget.leger_service.services.LedgerService;
 import jakarta.ws.rs.ForbiddenException;
@@ -183,7 +182,6 @@ public class LedgerServiceImpl implements LedgerService{
     @Override
     public String deleteTransaction(Long ledgerId) {
        return null;
-
     }
 
     @Override
@@ -201,6 +199,7 @@ public class LedgerServiceImpl implements LedgerService{
         );
         try{
             Page<LedgerEntity> ledgerPages = ledgerRepository.findWithCustomFilter(Long.parseLong(userId), pageable, filter);
+
             if(ledgerPages.isEmpty()){
                 pageable = PageRequest.of(
                         0,
@@ -228,7 +227,7 @@ public class LedgerServiceImpl implements LedgerService{
             return response;
         }catch(DataAccessException ex){
             log.error("Database currently unavailable");
-            throw new NotFoundException("Some problems with your db!");
+            throw new NotFoundException("Some problems with db!", ex);
         }
     }
 
@@ -246,6 +245,7 @@ public class LedgerServiceImpl implements LedgerService{
                 ));
         try {
             Page<LedgerEntity> ledgerPages = ledgerRepository.findByUserId(Long.parseLong(userId), pageable);
+
             List<InfoLedgerDTO> dtoList = ledgerPages.getContent().stream()
                     .map(this::convertToInfoLedgerDto)
                     .filter(Objects::nonNull)
@@ -259,8 +259,8 @@ public class LedgerServiceImpl implements LedgerService{
             response.setTotalElements(ledgerPages.getTotalElements());
             return response;
         }catch (DataAccessException ex){
-            log.error("Database currently unavailable");
-            throw new NotFoundException("Nothing founded!");
+            log.error("Database currently unavailable", ex);
+            throw new DataStorageException("Database currently unavailable");
         }
 
     }
