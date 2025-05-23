@@ -19,6 +19,10 @@ target/
 *.iml
 *.ipr
 
+
+**/api-keys.yaml
+
+
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
