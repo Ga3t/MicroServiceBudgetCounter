@@ -1,11 +1,10 @@
 server:
-  port: 0
+  port: 8080
 spring:
   application:
-    name: ledger-service # Имя, под которым сервис зарегистрируется в Eureka
-  # --- Ваши настройки базы данных и JPA ---
+    name: ledger-service
   datasource:
-    url: jdbc:postgresql://localhost:5432/ledger_db # Убедитесь, что БД существует и доступна
+    url: jdbc:postgresql://localhost:5432/ledger_db
     username: postgres
     password: Bgl862304*
     driver-class-name: org.postgresql.Driver
@@ -17,7 +16,6 @@ spring:
     properties:
       hibernate:
         format_sql: true
-  # --- Прочие настройки ---
   mvc:
     throw-exception-if-no-handler-found: true
   web:

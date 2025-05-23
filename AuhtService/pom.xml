@@ -10,9 +10,9 @@
 	</parent>
 
 	<groupId>com.budget</groupId>
-	<artifactId>AuhtService</artifactId> <!-- Обратите внимание на возможную опечатку Auth*Service -->
+	<artifactId>AuhtService</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>AuthService</name> <!-- Исправлено имя -->
+	<name>AuthService</name>
 	<description>Authentication Service</description>
 	<url/>
 	<licenses>
@@ -32,8 +32,6 @@
 		<java.version>21</java.version>
 		<spring-cloud.version>2024.0.1</spring-cloud.version>
 	</properties>
-
-	<!-- ДОБАВЛЕНО: Управление версиями зависимостей Spring Cloud -->
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
@@ -47,7 +45,6 @@
 	</dependencyManagement>
 
 	<dependencies>
-		<!-- Spring Boot Starters -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -62,7 +59,7 @@
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-validation</artifactId> <!-- Рекомендуется использовать стартер валидации -->
+			<artifactId>spring-boot-starter-validation</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -76,25 +73,22 @@
 			<scope>test</scope>
 		</dependency>
 
-		<!-- Spring Cloud -->
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
-			<!-- ИСПРАВЛЕНО: Версия УДАЛЕНА, управляется через dependencyManagement -->
 		</dependency>
 
-		<!-- Database -->
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
 		</dependency>
 
-		<!-- JWT -->
+
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
 			<artifactId>jjwt-api</artifactId>
-			<version>0.11.5</version> <!-- Или используйте более новую версию jjwt 0.12.x, если хотите -->
+			<version>0.11.5</version>
 		</dependency>
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
@@ -104,19 +98,17 @@
 		</dependency>
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
-			<artifactId>jjwt-jackson</artifactId> <!-- Используйте jjwt-jackson для поддержки Jackson -->
+			<artifactId>jjwt-jackson</artifactId>
 			<version>0.11.5</version>
 			<scope>runtime</scope>
 		</dependency>
 
-		<!-- Utilities -->
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<optional>true</optional>
 		</dependency>
 
-		<!-- Local Modules -->
 		<dependency>
 			<groupId>com.budget</groupId>
 			<artifactId>core</artifactId>
@@ -126,21 +118,20 @@
 	</dependencies>
 
 	<build>
-		<finalName>AuthService</finalName> <!-- Исправлено имя -->
+		<finalName>AuthService</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<!-- Конфигурация компилятора должна наследоваться от parent, но можно указать явно, если нужно -->
+
 				<configuration>
 					<source>${java.version}</source>
 					<target>${java.version}</target>
-					<!-- Конфигурация Lombok Annotation Processor -->
 					<annotationProcessorPaths>
 						<path>
 							<groupId>org.projectlombok</groupId>
 							<artifactId>lombok</artifactId>
-							<version>${lombok.version}</version> <!-- Желательно указать версию lombok -->
+							<version>${lombok.version}</version>
 						</path>
 					</annotationProcessorPaths>
 				</configuration>

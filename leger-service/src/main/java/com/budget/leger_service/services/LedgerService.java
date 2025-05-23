@@ -2,9 +2,12 @@ package com.budget.leger_service.services;
 
 
 import com.budget.leger_service.dto.*;
+import com.budget.leger_service.models.Category;
 import com.budget.leger_service.models.LedgerEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public interface LedgerService {
@@ -15,4 +18,5 @@ public interface LedgerService {
     String deleteTransaction(Long ledgerId);
     LedgerResponse findAllTransactionsWithCustomFilter(String userId, TransactionFilter filter, int pageNo, int pageSize);
     LedgerResponse findAllTransactions(String UserId, int pageNo, int pageSize);
+    List<Category> findAllCategories();
 }

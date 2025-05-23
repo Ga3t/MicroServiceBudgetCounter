@@ -76,13 +76,18 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
     @Override
     @Transactional
-    public AuthResponseDto refreshAccessToken(String refreshToken, String jwtToken) {
+    public AuthResponseDto refreshAccessToken(String refreshToken) {
 
-        Long userId = jwtGenerator.getUserIdFromJwt(jwtToken);
 
         RefreshToken token = refreshTokenRepository.findByToken(refreshToken)
                 .orElseThrow(()->new TokenNotFoundException("No such  refresh token"));
 
+        UserEntity user = token.getUser();
+        if (user == null) {
+            throw new UserNotFoundException("User not found");
+        }
+
+        Long userId = user.getId();
         Instant expiryDate = token.getExpiryDate();
 
         if(token.isRevoked())
@@ -90,12 +95,6 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
         if(expiryDate.isBefore(Instant.now()))
             throw new RefreshTokenExpiredException("Token was expired need to login again");
-
-        UserEntity user = userRepository.findById(userId)
-                .orElseThrow(()-> new UserNotFoundException("User not found"));
-
-        if(!user.getId().equals(token.getUser().getId()))
-            throw new RefreshTokenLeakedException(token.getId());
 
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 user.getUsername(),

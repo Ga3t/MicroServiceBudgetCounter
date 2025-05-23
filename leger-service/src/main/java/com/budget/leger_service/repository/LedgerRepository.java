@@ -1,5 +1,7 @@
 package com.budget.leger_service.repository;
 
+import com.budget.leger_service.dto.CategorySumDto;
+import com.budget.leger_service.models.Category;
 import com.budget.leger_service.models.LedgerEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,6 +31,16 @@ public interface LedgerRepository extends JpaRepository<LedgerEntity, Long>, Fil
 
     @Query("SELECT MAX(l.price) FROM LedgerEntity l JOIN l.category c WHERE l.userId = :userId AND c.categoryType = 'EXPENSES' AND EXTRACT(YEAR FROM l.date) = :year AND EXTRACT(MONTH FROM l.date) = :month")
     Optional<BigDecimal> findBiggestExpense(@Param("userId") Long userId, @Param("year") int year, @Param("month") int month);
+
+    @Query("SELECT new com.budget.leger_service.dto.CategorySumDto(c.name, SUM(l.price), c.categoryType) " +
+            "FROM LedgerEntity l " +
+            "JOIN l.category c " +
+            "WHERE l.userId = :userId AND EXTRACT(YEAR FROM l.date) = :year AND EXTRACT(MONTH FROM l.date) = :month " +
+            "GROUP BY c.id, c.name, c.categoryType")
+    List<CategorySumDto> findCategorySumsForMonth(@Param("userId") Long userId,
+                                                  @Param("year") int year,
+                                                  @Param("month") int month);
+
 
 //    @Query("SELECT MIN(YEAR(l.date)) FROM Ledger l WHERE l.user.id = :user_Id")
 //    Optional<Integer> findFirstTransactionYearByUserId(@Param("userId") Long userId);

@@ -27,11 +27,8 @@ public class RefreshTokenController {
     }
 
     @GetMapping("/generateaccess")
-    public ResponseEntity<AuthResponseDto> generateRefreshToken(@RequestHeader("X-Refresh-Token") String refreshToken,
-                                                                @RequestHeader("Authorization") String tokenJwt){
-
-        String jwt = tokenJwt.replace("Bearer ", "");
-        AuthResponseDto response = refreshTokenService.refreshAccessToken(refreshToken, jwt);
+    public ResponseEntity<AuthResponseDto> generateRefreshToken(@RequestHeader("X-Refresh-Token") String refreshToken){
+        AuthResponseDto response = refreshTokenService.refreshAccessToken(refreshToken);
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }

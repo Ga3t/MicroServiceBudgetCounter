@@ -6,6 +6,7 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 @EnableDiscoveryClient
 @SpringBootApplication(scanBasePackages = "com.budget")
@@ -24,8 +25,14 @@ public class ApiGatewayApplication {
 				.route("ledger_route", r -> r.path("/ledger/**")
 						.uri("lb://LEDGER-SERVICE")
 				)
+				.route("ledger_route", r -> r.path("/category/**")
+						.uri("lb://LEDGER-SERVICE")
+				)
 				.route("refreshtoken_route", r -> r.path("/refreshtoken/**")
 						.uri("lb://AUTH-SERVICE"))
+				.route("investments_route", r -> r.path("/cryptocurrency/**")
+						.uri("lb://INVESTMENTS-SERVICE")
+				)
 				.build();
 
 	}

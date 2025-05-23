@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -118,12 +119,12 @@ public class LedgerServiceImpl implements LedgerService{
 
     @Override
     public MonthStatDto showMonthStats(int year, int month, String userId) {
-
+        Long userIdLong = Long.parseLong(userId);
         MonthStatDto monthStatDto = new MonthStatDto();
-        BigDecimal biggestIncome = ledgerRepository.findBiggestIncome(Long.parseLong(userId), year, month).orElse(BigDecimal.ZERO);
-        BigDecimal biggestExpense = ledgerRepository.findBiggestExpense(Long.parseLong(userId), year, month).orElse(BigDecimal.ZERO);
-        BigDecimal totalIncomeForMonth = ledgerRepository.sumIncomeForMonth(Long.parseLong(userId), year, month).orElse(BigDecimal.ZERO);
-        BigDecimal totalExpensesForMonth =ledgerRepository.sumExpenseForMonth(Long.parseLong(userId), year, month).orElse(BigDecimal.ZERO);
+        BigDecimal biggestIncome = ledgerRepository.findBiggestIncome(userIdLong, year, month).orElse(BigDecimal.ZERO);
+        BigDecimal biggestExpense = ledgerRepository.findBiggestExpense(userIdLong, year, month).orElse(BigDecimal.ZERO);
+        BigDecimal totalIncomeForMonth = ledgerRepository.sumIncomeForMonth(userIdLong, year, month).orElse(BigDecimal.ZERO);
+        BigDecimal totalExpensesForMonth =ledgerRepository.sumExpenseForMonth(userIdLong, year, month).orElse(BigDecimal.ZERO);
 
         monthStatDto.setBiggestIncome(biggestIncome);
         monthStatDto.setBiggestExpenses(biggestExpense);
@@ -136,17 +137,16 @@ public class LedgerServiceImpl implements LedgerService{
         BigDecimal previousTotalIncome;
         BigDecimal previousTotalExpenses;
         if (month == 1) {
-            previousTotalIncome = ledgerRepository.sumIncomeForMonth(Long.parseLong(userId), year - 1, 12)
+            previousTotalIncome = ledgerRepository.sumIncomeForMonth(userIdLong, year - 1, 12)
                     .orElse(BigDecimal.ZERO);
-            previousTotalExpenses = ledgerRepository.sumExpenseForMonth(Long.parseLong(userId), year - 1, 12)
+            previousTotalExpenses = ledgerRepository.sumExpenseForMonth(userIdLong, year - 1, 12)
                     .orElse(BigDecimal.ZERO);
         } else {
-            previousTotalIncome = ledgerRepository.sumIncomeForMonth(Long.parseLong(userId), year, month - 1)
+            previousTotalIncome = ledgerRepository.sumIncomeForMonth(userIdLong, year, month - 1)
                     .orElse(BigDecimal.ZERO);
-            previousTotalExpenses = ledgerRepository.sumExpenseForMonth(Long.parseLong(userId), year, month - 1)
+            previousTotalExpenses = ledgerRepository.sumExpenseForMonth(userIdLong, year, month - 1)
                     .orElse(BigDecimal.ZERO);
         }
-
 
         BigDecimal incomeChange;
         if (previousTotalIncome.compareTo(BigDecimal.ZERO) == 0) {
@@ -176,6 +176,8 @@ public class LedgerServiceImpl implements LedgerService{
                     .multiply(new BigDecimal("100"));
         }
         monthStatDto.setExpensesChange(expensesChange);
+        List<CategorySumDto> categoryData = ledgerRepository.findCategorySumsForMonth(userIdLong, year, month);
+        monthStatDto.setCategoryCircle(categoryData);
         return monthStatDto;
     }
 
@@ -222,8 +224,7 @@ public class LedgerServiceImpl implements LedgerService{
             response.setLast(ledgerPages.isLast());
             response.setTotalPages(ledgerPages.getTotalPages());
             response.setTotalElements(ledgerPages.getTotalElements());
-
-
+            
             return response;
         }catch(DataAccessException ex){
             log.error("Database currently unavailable");
@@ -263,6 +264,12 @@ public class LedgerServiceImpl implements LedgerService{
             throw new DataStorageException("Database currently unavailable");
         }
 
+    }
+
+    @Override
+    public List<Category> findAllCategories() {
+        List<Category> categories = categoryRepository.findAll();
+        return categories;
     }
 
     private InfoLedgerDTO convertToInfoLedgerDto(LedgerEntity ledger){
