@@ -14,7 +14,7 @@ finance tracker built with a microservice architecture using
 - Spring Security (JWT)
 - Maven
 - Docker + Docker Compose
-- PostgreSQL *(planned)*
-- Redis *(planned)*
-- AWS (EC2, ECS, RDS)
+- PostgreSQL 
+- Redis 
+- AWS (EC2, ECS, RDS)*(planned)*
 
