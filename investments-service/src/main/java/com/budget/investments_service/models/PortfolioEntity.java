@@ -22,14 +22,7 @@ public class PortfolioEntity {
     @Column(name="QUANTITY", nullable = false)
     private BigDecimal quantity;
 
-    @Column(name="DATE_OF_TRANSACTION",nullable = false)
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss[.SSS][.SS][.S]")
-    private LocalDateTime date;
-
     @Column(name="USER_ID", nullable = false)
     private Long userId;
-
-    @Column(name = "PRICE_AT_PURCHASE", nullable = false)
-    private BigDecimal priceAtPurchase;
 
 }

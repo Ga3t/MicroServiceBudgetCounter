@@ -2,6 +2,7 @@ package com.budget.investments_service.controller;
 
 
 import com.budget.investments_service.models.dto.CryptoDto;
+import com.budget.investments_service.models.dto.DailyPriceDto;
 import com.budget.investments_service.services.CryptocurrencyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -23,12 +24,21 @@ public class CryptocurrencyController {
     }
 
     @GetMapping("/getlist")
-    public ResponseEntity<?> getListofCrypto(@RequestParam(value="pageNo", defaultValue = "0", required = false) int pageNo,
+    public ResponseEntity<Page<CryptoDto>> findListOfCryptocurrency(@RequestParam(value="pageNo", defaultValue = "0", required = false) int pageNo,
                                              @RequestParam(value="pageSize", defaultValue = "10", required = false) int pageSize){
 
-        Page<CryptoDto> cryptoList = cryptocurrencyService.findListOfCryptocurrency(pageSize, pageNo);
+        Page<CryptoDto> cryptoList = cryptocurrencyService.getListOfCryptocurrency(pageSize, pageNo);
 
         return new ResponseEntity<>(cryptoList, HttpStatus.OK);
-
     }
+
+    @GetMapping("/test")
+    public ResponseEntity<List<DailyPriceDto>>getDaily(@RequestParam(value = "cryptoId", defaultValue ="") String cryptoId){
+        if(cryptoId==null)
+            throw new IllegalArgumentException("No cryptocurrency selected");
+
+        List<DailyPriceDto> dailyPriceDtos = cryptocurrencyService.getDailyCryptoPrice(cryptoId);
+        return new ResponseEntity<>(dailyPriceDtos, HttpStatus.OK);
+    }
+
 }
