@@ -1,11 +1,8 @@
 package com.budget.investments_service.models;
 
-
-import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name="PORTFOLIO")
@@ -16,13 +13,45 @@ public class PortfolioEntity {
     @Column(name="ID")
     private Long id;
 
-    @Column(name="CRYPTOCURRENCY_NAME", nullable = false)
-    private String cryprocurrency_name;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "CRYPTO_ID", nullable = false)
+    private CryptocurrencyEntity cryptocurrency;
 
-    @Column(name="QUANTITY", nullable = false)
-    private BigDecimal quantity;
+    @Column(name="AMOUNT", nullable = false)
+    private BigDecimal amount;
 
     @Column(name="USER_ID", nullable = false)
     private Long userId;
 
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public CryptocurrencyEntity getCryptocurrency() {
+        return cryptocurrency;
+    }
+
+    public void setCryptocurrency(CryptocurrencyEntity cryptocurrency) {
+        this.cryptocurrency = cryptocurrency;
+    }
+
+    public BigDecimal getAmount() {
+        return amount;
+    }
+
+    public void setAmount(BigDecimal amount) {
+        this.amount = amount;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
 }

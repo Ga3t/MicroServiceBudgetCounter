@@ -1,15 +1,14 @@
 package com.budget.investments_service.services.impl;
 
 
-import com.budget.investments_service.deserializer.PriceListDeserializer;
+import com.budget.investments_service.tools.deserializer.OldPriceDeserializer;
+import com.budget.investments_service.tools.deserializer.PriceListDeserializer;
 import com.budget.investments_service.models.dto.CryptoDto;
 import com.budget.investments_service.models.dto.DailyPriceDto;
 import com.budget.investments_service.services.CryptocurrencyService;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,13 +20,13 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriUtils;
 
 import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Service
@@ -42,17 +41,78 @@ public class CryptocurrencyServiceImpl implements CryptocurrencyService {
 
     private RestTemplate restTemplate;
     private PriceListDeserializer priceListDeserializer;
+    private OldPriceDeserializer oldPriceDeserializer;
 
     @Autowired
-    public CryptocurrencyServiceImpl(RestTemplate restTemplate,
-                                     PriceListDeserializer priceListDeserializer) {
+    public CryptocurrencyServiceImpl(RestTemplate restTemplate, PriceListDeserializer priceListDeserializer, OldPriceDeserializer oldPriceDeserializer) {
         this.restTemplate = restTemplate;
-        this.priceListDeserializer= priceListDeserializer;
+        this.priceListDeserializer = priceListDeserializer;
+        this.oldPriceDeserializer = oldPriceDeserializer;
     }
 
 
     @Override
-    @Cacheable(value = "cryptoList")
+    public BigDecimal findPriceAtTime24h(List<DailyPriceDto> cachedPrices, LocalDateTime targetTime) {
+        LocalDateTime now = LocalDateTime.now();
+        Duration maxAllowedOffset = Duration.ofHours(24);
+        Duration actualOffset = Duration.between(targetTime, now).abs();
+
+        if (actualOffset.compareTo(maxAllowedOffset) > 0) {
+            return BigDecimal.ZERO;
+        }
+
+        Duration tolerance = Duration.ofMinutes(30);
+
+        return cachedPrices.stream()
+                .filter(p -> Duration.between(p.getDateTime(), targetTime).abs().compareTo(tolerance) <= 0)
+                .sorted(Comparator.comparing(p -> Duration.between(p.getDateTime(), targetTime).abs()))
+                .map(DailyPriceDto::getPrice)
+                .findFirst()
+                .orElse(BigDecimal.ZERO);
+    }
+
+    @Override
+    public BigDecimal findPriceAtTimeOld(String cryptoId, LocalDateTime targetTime) {
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+        String formattedDate = targetTime.format(formatter);
+
+        String url = apiUrl + "coins/{cryptoId}/history?date={formattedDate}&localization=false";
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("x-cg-demo-api-key", apiKey);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        Map<String, String> uriVariables = new HashMap<>();
+        uriVariables.put("cryptoId", cryptoId);
+        uriVariables.put("formattedDate", formattedDate);
+
+        ResponseEntity<String> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                entity,
+                String.class,
+                uriVariables
+        );
+
+        BigDecimal price= BigDecimal.ZERO;
+
+        if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+            try {
+                JsonParser parser = new ObjectMapper().createParser(response.getBody());
+                price = new OldPriceDeserializer().deserialize(parser, null);
+                return price;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }else{
+            throw new RuntimeException();
+        }
+        return price;
+    }
+
+
+    @Override
+    @Cacheable(value = "cryptoList", key = "#cryptoId")
     public List<CryptoDto> findFullCryptoList() {
         String url = apiUrl + "coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1&include_platform=true";
 
@@ -172,5 +232,6 @@ public class CryptocurrencyServiceImpl implements CryptocurrencyService {
 
         return dailyPrice;
     }
+
 
 }

@@ -1,4 +1,4 @@
-package com.budget.investments_service.deserializer;
+package com.budget.investments_service.tools.deserializer;
 
 
 import com.budget.investments_service.models.dto.DailyPriceDto;
