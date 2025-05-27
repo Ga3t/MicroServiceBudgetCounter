@@ -32,7 +32,7 @@ public class CryptocurrencyController {
         return new ResponseEntity<>(cryptoList, HttpStatus.OK);
     }
 
-    @GetMapping("/test")
+    @GetMapping("/dailyprice")
     public ResponseEntity<List<DailyPriceDto>>getDaily(@RequestParam(value = "cryptoId", defaultValue ="") String cryptoId){
         if(cryptoId==null)
             throw new IllegalArgumentException("No cryptocurrency selected");

@@ -22,16 +22,18 @@ public class PortfolioController {
         this.cryptocurrencyService = cryptocurrencyService;
     }
 
-    @PostMapping("/createtransaction")
-    public ResponseEntity<String> createTransaction(@RequestBody CreateCryptoTransactionDto createCryptoTransaction,
+    @PostMapping("/buycrypto")
+    public ResponseEntity<String> buyCrypto(@RequestBody CreateCryptoTransactionDto createCryptoTransaction,
                                                @RequestHeader("X-User-ID") Long userId){
-
         String response = portfolioService.buyCryptoTransaction(createCryptoTransaction, userId);
-
-
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-
+    @PostMapping("/cellcrypto")
+    public ResponseEntity<String> cellCrypto(@RequestBody CreateCryptoTransactionDto createCryptoTransaction,
+                                                    @RequestHeader("X-User-ID") Long userId){
+        String response = portfolioService.cellCryptoTransaction(createCryptoTransaction, userId);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
 
 }

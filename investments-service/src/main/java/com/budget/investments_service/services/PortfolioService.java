@@ -12,6 +12,8 @@ public interface PortfolioService {
 
     String buyCryptoTransaction(CreateCryptoTransactionDto createCryptoTransactionDTO, Long userId);
     List<CryptoFromPortfolioDto> getUserPortfolio(String userId);
+    String cellCryptoTransaction(CreateCryptoTransactionDto createCryptoTransactionDTO, Long userId);
+
 
 
 }

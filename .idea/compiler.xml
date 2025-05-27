@@ -17,6 +17,7 @@
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="false">
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.38/lombok-1.18.38.jar" />
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.38/lombok-1.18.38.jar" />
         </processorPath>
         <module name="investments-service" />
         <module name="AuhtService" />
@@ -27,18 +28,29 @@
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="false">
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.32/lombok-1.18.32.jar" />
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.32/lombok-1.18.32.jar" />
         </processorPath>
         <module name="leger-service" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="api-gateway (1)" target="21" />
+      <module name="AuhtService (1)" target="21" />
+      <module name="core (1)" target="21" />
+      <module name="leger-service (1)" target="21" />
+    </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="AuhtService" options="-parameters" />
+      <module name="AuhtService (1)" options="-parameters" />
       <module name="api-gateway" options="-parameters" />
+      <module name="api-gateway (1)" options="-parameters" />
       <module name="core" options="-parameters" />
+      <module name="core (1)" options="-parameters" />
       <module name="investments-service" options="-parameters" />
       <module name="leger-service" options="-parameters" />
+      <module name="leger-service (1)" options="-parameters" />
       <module name="service-registry" options="-parameters" />
     </option>
   </component>

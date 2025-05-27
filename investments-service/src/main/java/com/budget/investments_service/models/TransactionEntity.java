@@ -24,7 +24,7 @@ public class TransactionEntity {
     @Column(name="DATE", nullable = false)
     private LocalDateTime dateTime;
 
-    @Column(name="CRYPTO_AMOUNT", nullable = false)
+    @Column(name="CRYPTO_AMOUNT", nullable = false, precision = 38, scale = 18)
     private BigDecimal amount;
 
     @Column(name="TYPE", nullable = false)

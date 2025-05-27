@@ -1,6 +1,8 @@
 package com.budget.investments_service.services.impl;
 
 
+import com.budget.investments_service.exceptions.NotEnoughCryptoException;
+import com.budget.investments_service.exceptions.TransactionIsBeforeLastUpdateException;
 import com.budget.investments_service.models.CryptocurrencyEntity;
 import com.budget.investments_service.models.PortfolioEntity;
 import com.budget.investments_service.models.TransactionEntity;
@@ -19,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -61,7 +64,6 @@ public class PortfolioServiceImpl implements PortfolioService{
         LocalDateTime timeTransaction= createCryptoTransactionDTO.getDateTime();
 
         List<DailyPriceDto> dailyPriceDtos = cryptocurrencyService.getDailyCryptoPrice(cryptoId);
-        System.out.println(dailyPriceDtos);
         BigDecimal priceCryptoForOne = cryptocurrencyService.findPriceAtTime24h(dailyPriceDtos,timeTransaction);
 
         if(Objects.equals(priceCryptoForOne, BigDecimal.ZERO)){
@@ -94,33 +96,115 @@ public class PortfolioServiceImpl implements PortfolioService{
             newTransaction.setCryptocurrency(newCrypto);
             addToPortfolio(newCrypto, cryptoAmount,userLongId);
         }
+
         transactionRepository.save(newTransaction);
 
         return "Transaction successfully recorded";
     }
+
+    @Transactional
+    public String cellCryptoTransaction(CreateCryptoTransactionDto createCryptoTransactionDTO, Long userId) {
+
+        Long userLongId= userId;
+        TransactionEntity newTransaction = new TransactionEntity();
+        String cryptoId = createCryptoTransactionDTO.getCryptoId();
+        LocalDateTime transactionTime = createCryptoTransactionDTO.getDateTime();
+        newTransaction.setUserId(userId);
+
+        BigDecimal amount= createCryptoTransactionDTO.getAmount();
+        Optional<CryptocurrencyEntity> crypto = cryptocurrencyRepository.findByCryptoId(cryptoId);
+
+        CryptocurrencyEntity newCrypto = crypto.orElseGet(() -> {
+            CryptocurrencyEntity newOne = new CryptocurrencyEntity();
+            newOne.setCryptoId(cryptoId);
+            cryptocurrencyRepository.save(newOne);
+            return newOne;
+        });
+
+        boolean portfolioCheck = withdrawFromPortfolio(newCrypto, amount, userId, transactionTime);
+
+        if (portfolioCheck) {
+            newTransaction.setType(TransactionType.SELL);
+            newTransaction.setAmount(amount);
+            newTransaction.setCryptocurrency(newCrypto);
+            newTransaction.setUserId(userId);
+            newTransaction.setDateTime(transactionTime);
+
+            List<DailyPriceDto> dailyPriceDtos = cryptocurrencyService.getDailyCryptoPrice(cryptoId);
+            BigDecimal priceCryptoForOne = cryptocurrencyService.findPriceAtTime24h(dailyPriceDtos, transactionTime);
+
+            if (priceCryptoForOne.equals(BigDecimal.ZERO)) {
+                Duration maxAllowedOffset = Duration.ofHours(24);
+                Duration actualOffset = Duration.between(transactionTime, LocalDateTime.now()).abs();
+
+                if (actualOffset.compareTo(maxAllowedOffset) > 0) {
+                    priceCryptoForOne = cryptocurrencyService.findPriceAtTimeOld(cryptoId, transactionTime);
+                }
+            }
+            BigDecimal priceCrypto = priceCryptoForOne.multiply(amount);
+            newTransaction.setPrice(priceCrypto);
+            transactionRepository.save(newTransaction);
+            return "Transaction successfully recorded";
+        }else {
+            return "Failed to create transaction";
+        }
+
+
+    }
+
 
     @Override
     public List<CryptoFromPortfolioDto> getUserPortfolio(String userId) {
         return List.of();
     }
 
+    @Transactional
     public void addToPortfolio(CryptocurrencyEntity crypto, BigDecimal amount, Long userId){
         Optional<PortfolioEntity> optionalPortfolio = portfolioRepository.findByUserIdAndCryptocurrency(userId, crypto);
 
         PortfolioEntity portfolio;
+
         if (optionalPortfolio.isPresent()) {
-            portfolio = optionalPortfolio.get();
+            portfolio= optionalPortfolio.orElseThrow(()-> new RuntimeException("Server error"));
+            portfolio.setLast_update(LocalDateTime.now());
             BigDecimal oldAmount = portfolio.getAmount();
             BigDecimal newAmount = oldAmount.add(amount);
             portfolio.setAmount(newAmount);
         } else {
             portfolio = new PortfolioEntity();
+            portfolio.setLast_update(LocalDateTime.now());
             portfolio.setUserId(userId);
             portfolio.setCryptocurrency(crypto);
             portfolio.setAmount(amount);
         }
-
         portfolioRepository.save(portfolio);
+    }
+
+    @Transactional
+    public boolean withdrawFromPortfolio(CryptocurrencyEntity crypto, BigDecimal amount, Long userId,LocalDateTime transactionTime){
+        Optional<PortfolioEntity> optionalPortfolio = portfolioRepository.findByUserIdAndCryptocurrency(userId, crypto);
+        LocalDateTime last_update = optionalPortfolio.get().getLast_update();
+        PortfolioEntity portfolio= new PortfolioEntity();
+        portfolio.setLast_update(LocalDateTime.now(Clock.systemUTC()));
+        if(transactionTime.isBefore(last_update.minusHours(1)))
+            throw new TransactionIsBeforeLastUpdateException("The validity of the transaction cannot be determined");
+        if (optionalPortfolio.isPresent()) {
+                portfolio = optionalPortfolio.get();
+                BigDecimal oldAmount = portfolio.getAmount();
+                String cryptoId = crypto.getCryptoId();
+                if (oldAmount.equals(BigDecimal.ZERO))
+                    throw new NotEnoughCryptoException("Not enough {cryptoId} on your balance");
+                else {
+                    if (oldAmount.compareTo(amount) < 0) {
+                        throw new NotEnoughCryptoException("Not enough " + crypto.getCryptoId() + " on your balance");
+                    }
+                    portfolio.setAmount(oldAmount.subtract(amount));
+                    portfolioRepository.save(portfolio);
+                    return true;
+                }
+
+        }
+        return false;
     }
 }
 
