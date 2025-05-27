@@ -24,6 +24,7 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -51,10 +52,9 @@ public class PortfolioServiceImpl implements PortfolioService{
 
     @Override
     @Transactional
-    public String buyCryptoTransaction(CreateCryptoTransactionDto createCryptoTransactionDTO, Long userId) {
+    public String buyCryptoTransaction(CreateCryptoTransactionDto createCryptoTransactionDTO, String userId) {
 
-       // Long userLongId= Long.parseLong(userId);
-        Long userLongId= userId;
+        Long userLongId= Long.parseLong(userId);
         TransactionEntity newTransaction = new TransactionEntity();
 
         newTransaction.setUserId(userLongId);
@@ -102,14 +102,15 @@ public class PortfolioServiceImpl implements PortfolioService{
         return "Transaction successfully recorded";
     }
 
+    @Override
     @Transactional
-    public String cellCryptoTransaction(CreateCryptoTransactionDto createCryptoTransactionDTO, Long userId) {
+    public String cellCryptoTransaction(CreateCryptoTransactionDto createCryptoTransactionDTO, String userId) {
 
-        Long userLongId= userId;
+        Long userLongId= Long.parseLong(userId);
         TransactionEntity newTransaction = new TransactionEntity();
         String cryptoId = createCryptoTransactionDTO.getCryptoId();
         LocalDateTime transactionTime = createCryptoTransactionDTO.getDateTime();
-        newTransaction.setUserId(userId);
+        newTransaction.setUserId(userLongId);
 
         BigDecimal amount= createCryptoTransactionDTO.getAmount();
         Optional<CryptocurrencyEntity> crypto = cryptocurrencyRepository.findByCryptoId(cryptoId);
@@ -121,13 +122,13 @@ public class PortfolioServiceImpl implements PortfolioService{
             return newOne;
         });
 
-        boolean portfolioCheck = withdrawFromPortfolio(newCrypto, amount, userId, transactionTime);
+        boolean portfolioCheck = withdrawFromPortfolio(newCrypto, amount, userLongId, transactionTime);
 
         if (portfolioCheck) {
             newTransaction.setType(TransactionType.SELL);
             newTransaction.setAmount(amount);
             newTransaction.setCryptocurrency(newCrypto);
-            newTransaction.setUserId(userId);
+            newTransaction.setUserId(userLongId);
             newTransaction.setDateTime(transactionTime);
 
             List<DailyPriceDto> dailyPriceDtos = cryptocurrencyService.getDailyCryptoPrice(cryptoId);
@@ -148,14 +149,31 @@ public class PortfolioServiceImpl implements PortfolioService{
         }else {
             return "Failed to create transaction";
         }
-
-
     }
 
 
     @Override
-    public List<CryptoFromPortfolioDto> getUserPortfolio(String userId) {
-        return List.of();
+    @Transactional
+    public List<CryptoFromPortfolioDto> getUserPortfolio(Long userId) {
+
+        //Long userLongId = Long.parseLong(userId);
+        List<PortfolioEntity> portfolioEntities = portfolioRepository.findByUserId(userId);
+
+        List<CryptoFromPortfolioDto> response = new ArrayList<>();
+        for(int i=0; portfolioEntities.size()>i; i++ ){
+            PortfolioEntity entity= portfolioEntities.get(i);
+            String cryptoId = entity.getCryptocurrency().getCryptoId();
+            CryptoFromPortfolioDto dto = new CryptoFromPortfolioDto();
+            dto.setAmount(entity.getAmount());
+            dto.setCryptoName(cryptoId);
+            List<DailyPriceDto> dailyPriceList = cryptocurrencyService.getDailyCryptoPrice(cryptoId);
+            BigDecimal priceForOne = cryptocurrencyService.findPriceAtTime24h(dailyPriceList, LocalDateTime.now(Clock.systemUTC()));
+            BigDecimal price = priceForOne.multiply(entity.getAmount());
+            dto.setCurrentPrice(price);
+            response.add(dto);
+        }
+
+        return response;
     }
 
     @Transactional
