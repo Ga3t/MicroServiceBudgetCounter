@@ -1,3 +1,5 @@
+server:
+  port: 0
 spring:
   application:
     name: investments-service
@@ -8,8 +10,11 @@ spring:
     port: 6379
   cache:
     type: redis
-
-
+  kafka:
+    bootstrap-servers: localhost:9092,localhost:9094
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
   datasource:
     url: jdbc:postgresql://localhost:5433/portfolio_db
     username: postgres

@@ -1,6 +1,7 @@
 package com.budget.investments_service.services.impl;
 
 
+import com.budget.investments_service.events.TransactionCreatedEvent;
 import com.budget.investments_service.exceptions.NotEnoughCryptoException;
 import com.budget.investments_service.exceptions.TransactionIsBeforeLastUpdateException;
 import com.budget.investments_service.models.CryptocurrencyEntity;
@@ -17,6 +18,7 @@ import com.budget.investments_service.services.CryptocurrencyService;
 import com.budget.investments_service.services.PortfolioService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,10 +26,7 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @Primary
@@ -37,18 +36,20 @@ public class PortfolioServiceImpl implements PortfolioService{
     private CryptocurrencyService cryptocurrencyService;
     private CryptocurrencyRepository cryptocurrencyRepository;
     private TransactionRepository transactionRepository;
+    private KafkaTemplate<String, TransactionCreatedEvent> kafkaTemplate;
 
     @Autowired
     public PortfolioServiceImpl(PortfolioRepository portfolioRepository,
                                 CryptocurrencyService cryptocurrencyService,
                                 CryptocurrencyRepository cryptocurrencyRepository,
-                                TransactionRepository transactionRepository) {
+                                TransactionRepository transactionRepository, KafkaTemplate<String,
+                                TransactionCreatedEvent> kafkaTemplate) {
         this.portfolioRepository = portfolioRepository;
         this.cryptocurrencyService = cryptocurrencyService;
         this.cryptocurrencyRepository = cryptocurrencyRepository;
         this.transactionRepository = transactionRepository;
+        this.kafkaTemplate = kafkaTemplate;
     }
-
 
     @Override
     @Transactional
@@ -56,7 +57,7 @@ public class PortfolioServiceImpl implements PortfolioService{
 
         Long userLongId= Long.parseLong(userId);
         TransactionEntity newTransaction = new TransactionEntity();
-
+        String transactionId = UUID.randomUUID().toString();
         newTransaction.setUserId(userLongId);
 
         String cryptoId= createCryptoTransactionDTO.getCryptoId();
@@ -96,8 +97,12 @@ public class PortfolioServiceImpl implements PortfolioService{
             newTransaction.setCryptocurrency(newCrypto);
             addToPortfolio(newCrypto, cryptoAmount,userLongId);
         }
-
         transactionRepository.save(newTransaction);
+        String transactionDescription = String.format("Purchase of %s", cryptoId);
+        TransactionCreatedEvent transactionCreatedEvent = new TransactionCreatedEvent(userLongId,
+                newTransaction.getPrice(), transactionDescription,newTransaction.getDateTime(),
+                "BUY PORTFOLIO");
+        kafkaTemplate.send("transaction-created-events-topic", transactionId, transactionCreatedEvent);
 
         return "Transaction successfully recorded";
     }
@@ -107,6 +112,7 @@ public class PortfolioServiceImpl implements PortfolioService{
     public String cellCryptoTransaction(CreateCryptoTransactionDto createCryptoTransactionDTO, String userId) {
 
         Long userLongId= Long.parseLong(userId);
+        String transactionId = UUID.randomUUID().toString();
         TransactionEntity newTransaction = new TransactionEntity();
         String cryptoId = createCryptoTransactionDTO.getCryptoId();
         LocalDateTime transactionTime = createCryptoTransactionDTO.getDateTime();
@@ -145,6 +151,12 @@ public class PortfolioServiceImpl implements PortfolioService{
             BigDecimal priceCrypto = priceCryptoForOne.multiply(amount);
             newTransaction.setPrice(priceCrypto);
             transactionRepository.save(newTransaction);
+            String transactionDescription = String.format("Sell %s from portfolio", cryptoId);
+            TransactionCreatedEvent transactionCreatedEvent = new TransactionCreatedEvent(userLongId,
+                    priceCrypto, transactionDescription,transactionTime, "CELL PORTFOLIO");
+
+            kafkaTemplate.send("transaction-created-events-topic", transactionId, transactionCreatedEvent);
+
             return "Transaction successfully recorded";
         }else {
             return "Failed to create transaction";
@@ -154,10 +166,10 @@ public class PortfolioServiceImpl implements PortfolioService{
 
     @Override
     @Transactional
-    public List<CryptoFromPortfolioDto> getUserPortfolio(Long userId) {
+    public List<CryptoFromPortfolioDto> getUserPortfolio(String userId) {
 
-        //Long userLongId = Long.parseLong(userId);
-        List<PortfolioEntity> portfolioEntities = portfolioRepository.findByUserId(userId);
+        Long userLongId = Long.parseLong(userId);
+        List<PortfolioEntity> portfolioEntities = portfolioRepository.findByUserId(userLongId);
 
         List<CryptoFromPortfolioDto> response = new ArrayList<>();
         for(int i=0; portfolioEntities.size()>i; i++ ){
@@ -170,14 +182,17 @@ public class PortfolioServiceImpl implements PortfolioService{
             BigDecimal priceForOne = cryptocurrencyService.findPriceAtTime24h(dailyPriceList, LocalDateTime.now(Clock.systemUTC()));
             BigDecimal price = priceForOne.multiply(entity.getAmount());
             dto.setCurrentPrice(price);
+            dto.setLast_update(entity.getLast_update());
             response.add(dto);
         }
 
         return response;
     }
 
+    @Override
     @Transactional
     public void addToPortfolio(CryptocurrencyEntity crypto, BigDecimal amount, Long userId){
+
         Optional<PortfolioEntity> optionalPortfolio = portfolioRepository.findByUserIdAndCryptocurrency(userId, crypto);
 
         PortfolioEntity portfolio;
@@ -198,8 +213,10 @@ public class PortfolioServiceImpl implements PortfolioService{
         portfolioRepository.save(portfolio);
     }
 
+    @Override
     @Transactional
     public boolean withdrawFromPortfolio(CryptocurrencyEntity crypto, BigDecimal amount, Long userId,LocalDateTime transactionTime){
+
         Optional<PortfolioEntity> optionalPortfolio = portfolioRepository.findByUserIdAndCryptocurrency(userId, crypto);
         LocalDateTime last_update = optionalPortfolio.get().getLast_update();
         PortfolioEntity portfolio= new PortfolioEntity();

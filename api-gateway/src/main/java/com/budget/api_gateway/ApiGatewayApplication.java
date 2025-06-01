@@ -33,6 +33,9 @@ public class ApiGatewayApplication {
 				.route("investments_route", r -> r.path("/cryptocurrency/**")
 						.uri("lb://INVESTMENTS-SERVICE")
 				)
+				.route("investments_route", r -> r.path("/portfolio/**")
+						.uri("lb://INVESTMENTS-SERVICE")
+				)
 				.build();
 
 	}

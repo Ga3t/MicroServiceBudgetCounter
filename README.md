@@ -16,5 +16,6 @@ finance tracker built with a microservice architecture using
 - Docker + Docker Compose
 - PostgreSQL 
 - Redis 
-- AWS (EC2, ECS, RDS)*(planned)*
+- AWS (EC2, ECS, RDS) *(planned)*
+- Kafka *(planned)*
 

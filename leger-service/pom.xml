@@ -4,9 +4,10 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>com.budget</groupId>
-		<artifactId>MicroServiceBudgetCounter</artifactId>
-		<version>0.0.1-SNAPSHOT</version>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>3.4.5</version>
+		<relativePath/>
 	</parent>
 
 	<groupId>com.budget</groupId>

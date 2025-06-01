@@ -40,7 +40,7 @@ public class PortfolioController {
     }
 
     @GetMapping("/getportfolio")
-    public ResponseEntity<List<CryptoFromPortfolioDto>> getPortfolio(@RequestHeader("X-User-ID") Long userId){
+    public ResponseEntity<List<CryptoFromPortfolioDto>> getPortfolio(@RequestHeader("X-User-ID") String userId){
         List<CryptoFromPortfolioDto> response = portfolioService.getUserPortfolio(userId);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
